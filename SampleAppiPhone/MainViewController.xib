@@ -825,7 +825,7 @@
 					<object class="IBUILabel" id="895645311">
 						<reference key="NSNextResponder" ref="774585933"/>
 						<int key="NSvFlags">268</int>
-						<string key="NSFrame">{{20, 89}, {98, 37}}</string>
+						<string key="NSFrame">{{20, 110}, {98, 37}}</string>
 						<reference key="NSSuperview" ref="774585933"/>
 						<reference key="IBUIBackgroundColor" ref="744201381"/>
 						<bool key="IBUIOpaque">NO</bool>
