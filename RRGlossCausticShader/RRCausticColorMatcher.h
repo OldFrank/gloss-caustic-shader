@@ -22,7 +22,12 @@
 //
 //------------------------------------------------------------------------------
 
+#if TARGET_OS_IPHONE
+#import <UIKit/UIKit.h>
+#else
 #import <AppKit/AppKit.h>
+#endif
+
 
 @interface RRCausticColorMatcher : NSObject
 {
@@ -57,7 +62,11 @@
 		// that amount.
 }
 
+#if TARGET_OS_IPHONE
+- (UIColor *)matchForColor:(UIColor *)aColor;
+#else
 - (NSColor *)matchForColor:(NSColor *)aColor;
+#endif
 	// Matches the given colour. Answers a matching caustic colour. The result
 	// shifts hue and brightness towards yellow. Saturation remains unchanged.
 - (void)matchForHSB:(const CGFloat *)hsb caustic:(CGFloat *)outHSB;

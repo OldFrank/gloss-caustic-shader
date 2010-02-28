@@ -24,6 +24,13 @@
 
 #import "RRCausticColorMatcher.h"
 
+#if TARGET_OS_IPHONE
+#import "UIColor+Components.h"
+#import "RGBtoHSB.h"
+#endif
+
+
+
 @implementation RRCausticColorMatcher
 
 - (id)init
@@ -42,13 +49,30 @@
 	return self;
 }
 
+#if TARGET_OS_IPHONE
+- (UIColor *)matchForColor:(UIColor *)aColor
+{
+	CGFloat hsba[4];
+    RGBtoHSB(aColor.red, aColor.green, aColor.blue, hsba+0, hsba+1, hsba+2);
+    hsba[3] = aColor.alpha;
+	[self matchForHSB:hsba caustic:hsba];
+    
+    CGFloat rgba[4];
+    HSBtoRGB(rgba+0, rgba+1, rgba+2, hsba[0], hsba[1], hsba[2]);
+    rgba[3] = hsba[3];
+    
+    return [UIColor colorWithRed:rgba[0] green:rgba[1] blue:rgba[2] alpha:rgba[3]];
+}
+#else
 - (NSColor *)matchForColor:(NSColor *)aColor
 {
 	CGFloat hsba[4];
-	[[aColor colorUsingColorSpaceName:NSCalibratedRGBColorSpace] getHue:hsba+0 saturation:hsba+1 brightness:hsba+2 alpha:hsba+3];
+	[[aColor colorUsingColorSpaceName:NSCalibratedRGBColorSpace] getHue: saturation:hsba+1 brightness:hsba+2 alpha:hsba+3];
 	[self matchForHSB:hsba caustic:hsba];
 	return [NSColor colorWithCalibratedHue:hsba[0] saturation:hsba[1] brightness:hsba[2] alpha:hsba[3]];
 }
+#endif
+
 - (void)matchForHSB:(const CGFloat *)hsb caustic:(CGFloat *)outHSB
 {
 #define HCOMP (0) // hue component

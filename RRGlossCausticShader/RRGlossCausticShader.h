@@ -22,7 +22,12 @@
 //
 //------------------------------------------------------------------------------
 
+#if TARGET_OS_IPHONE
+#import <UIKit/UIKit.h>
+#else
 #import <AppKit/AppKit.h>
+#endif
+
 
 @class RRCausticColorMatcher;
 
@@ -32,7 +37,11 @@
 	RRCausticColorMatcher *matcher;
 }
 
+#if TARGET_OS_IPHONE
+- (void)drawShadingFromPoint:(CGPoint)startingPoint toPoint:(CGPoint)endingPoint inContext:(CGContextRef)aContext;
+#else
 - (void)drawShadingFromPoint:(NSPoint)startingPoint toPoint:(NSPoint)endingPoint inContext:(CGContextRef)aContext;
+#endif
 
 - (void)update;
 	// Send -update after changing one or more parameters. Setters do not
@@ -48,8 +57,13 @@
 //---------------------------------------------------------------------- setters
 
 - (void)setExponentialCoefficient:(float)c;
+#if TARGET_OS_IPHONE
+- (void)setNoncausticColor:(UIColor *)aColor;
+#else
 - (void)setNoncausticColor:(NSColor *)aColor;
-	// Converts aColor to device RGB colour space. The resulting colour
+#endif
+
+    // Converts aColor to device RGB colour space. The resulting colour
 	// components become the new non-caustic colour. This setter, like all
 	// others, does not automatically readjust the dependencies. Invoke -update
 	// after adjusting one or more settings.
@@ -63,7 +77,12 @@
 //---------------------------------------------------------------------- getters
 
 - (float)exponentialCoefficient;
+#if TARGET_OS_IPHONE
+- (UIColor *)noncausticColor;
+#else
 - (NSColor *)noncausticColor;
+#endif
+
 	// Returns the non-caustic colour.
 - (CGFloat)glossReflectionPower;
 - (CGFloat)glossStartingWhite;

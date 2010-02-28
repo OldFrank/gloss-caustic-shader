@@ -28,6 +28,12 @@
 #import "RRCausticColorMatcher.h"
 #import "RRLuminanceFromRGBComponents.h"
 
+
+#if TARGET_OS_IPHONE
+#import "UIColor+Components.h"
+#endif
+
+
 struct RRGlossCausticShaderInfo
 {
 	RRExponentialFunction exponentialFunction;
@@ -70,7 +76,11 @@ void RRGlossCausticShaderEvaluate(void *info, const CGFloat *in, CGFloat *out);
 		info->gloss.startingWhite = 0.6f;
 		info->gloss.endingWhite = 0.2f;
 		matcher = [[RRCausticColorMatcher alloc] init];
+#if TARGET_OS_IPHONE
+		[self setNoncausticColor:[UIColor grayColor]];
+#else
 		[self setNoncausticColor:[NSColor grayColor]];
+#endif
 		[self update];
 	}
 	return self;
@@ -82,7 +92,11 @@ void RRGlossCausticShaderEvaluate(void *info, const CGFloat *in, CGFloat *out);
 	[super dealloc];
 }
 
+#if TARGET_OS_IPHONE
+- (void)drawShadingFromPoint:(CGPoint)startingPoint toPoint:(CGPoint)endingPoint inContext:(CGContextRef)aContext
+#else
 - (void)drawShadingFromPoint:(NSPoint)startingPoint toPoint:(NSPoint)endingPoint inContext:(CGContextRef)aContext
+#endif
 {
 	// Interestingly, even surprisingly, caching the function object does not
 	// work. The implementation could easily save the CGFunctionRef in-between
@@ -110,7 +124,11 @@ void RRGlossCausticShaderEvaluate(void *info, const CGFloat *in, CGFloat *out);
 #define DIMENSION(v) (sizeof(v)/sizeof((v)[0]))
 	CGFunctionRef evaluateFunction = CGFunctionCreate(info, DIMENSION(domain)/2, domain, DIMENSION(range)/2, range, &callbacks);
 	CGColorSpaceRef colorSpace = CGColorSpaceCreateDeviceRGB();
+#if TARGET_OS_IPHONE
+	CGShadingRef shading = CGShadingCreateAxial(colorSpace, startingPoint, endingPoint, evaluateFunction, false, false);
+#else
 	CGShadingRef shading = CGShadingCreateAxial(colorSpace, NSPointToCGPoint(startingPoint), NSPointToCGPoint(endingPoint), evaluateFunction, false, false);
+#endif
 	CGContextDrawShading(aContext, shading);
 	CGShadingRelease(shading);
 	CGColorSpaceRelease(colorSpace);
@@ -122,7 +140,15 @@ void RRGlossCausticShaderEvaluate(void *info, const CGFloat *in, CGFloat *out);
 	[self willChangeValueForKey:@"color"];
 	
 	// (non-caustic RGBA --> caustic RGBA)
+#if TARGET_OS_IPHONE
+    UIColor *causticColor = [matcher matchForColor:[self noncausticColor]];
+    info->causticRGBA[0] = causticColor.red;
+    info->causticRGBA[1] = causticColor.green;
+    info->causticRGBA[2] = causticColor.blue;
+    info->causticRGBA[3] = causticColor.alpha;
+#else
 	[[[matcher matchForColor:[self noncausticColor]] colorUsingColorSpace:[NSColorSpace deviceRGBColorSpace]] getComponents:info->causticRGBA];
+#endif
 	
 	// (non-caustic RGBA, gloss reflection power, starting and ending white -->
 	// gloss white origin, extent)
@@ -148,10 +174,21 @@ void RRGlossCausticShaderEvaluate(void *info, const CGFloat *in, CGFloat *out);
 {
 	RRExponentialFunctionSetCoefficient(&info->exponentialFunction, c);
 }
+
+#if TARGET_OS_IPHONE
+- (void)setNoncausticColor:(UIColor *)aColor {
+    info->noncausticRGBA[0] = aColor.red;
+    info->noncausticRGBA[1] = aColor.green;
+    info->noncausticRGBA[2] = aColor.blue;
+    info->noncausticRGBA[3] = aColor.alpha;
+}
+#else
 - (void)setNoncausticColor:(NSColor *)aColor
 {
 	[[aColor colorUsingColorSpace:[NSColorSpace deviceRGBColorSpace]] getComponents:info->noncausticRGBA];
 }
+#endif
+
 - (void)setGlossReflectionPower:(CGFloat)powerLevel
 {
 	info->gloss.reflectionPower = powerLevel;
@@ -171,10 +208,18 @@ void RRGlossCausticShaderEvaluate(void *info, const CGFloat *in, CGFloat *out);
 {
 	return info->exponentialFunction.coefficient;
 }
+#if TARGET_OS_IPHONE
+- (UIColor *)noncausticColor
+{
+    return [UIColor       colorWithRed:info->noncausticRGBA[0] green:info->noncausticRGBA[1] blue:info->noncausticRGBA[2] alpha:info->noncausticRGBA[3]];
+}
+#else
 - (NSColor *)noncausticColor
 {
 	return [NSColor colorWithDeviceRed:info->noncausticRGBA[0] green:info->noncausticRGBA[1] blue:info->noncausticRGBA[2] alpha:info->noncausticRGBA[3]];
 }
+#endif
+
 - (CGFloat)glossReflectionPower
 {
 	return info->gloss.reflectionPower;
